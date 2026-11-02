@@ -14,7 +14,13 @@ Amostra real para o par **P1 (t de Welch x Mann-Whitney)**: tempo até o merge d
 
 ## Forma de coleta
 
-Os PRs foram obtidos pela [API de busca do GitHub](https://docs.github.com/rest/search/search#search-issues-and-pull-requests) (`GET /search/issues`), sem autenticação. As mesmas buscas podem ser feitas na interface do GitHub.
+Os PRs foram obtidos pela [API de busca do GitHub](https://docs.github.com/rest/search/search#search-issues-and-pull-requests) (`GET /search/issues`), sem autenticação, com o script [`scripts/coletar_prs.py`](../scripts/coletar_prs.py). Ele usa só a biblioteca padrão do Python e gera o CSV:
+
+```
+python scripts/coletar_prs.py
+```
+
+Se a API recusar por limite de requisições, o script espera e tenta de novo. Definir a variável de ambiente `GITHUB_TOKEN` aumenta esse limite. As mesmas buscas também podem ser feitas na interface do GitHub.
 
 | Grupo | Busca | Ordenação | Seleção |
 |---|---|---|---|

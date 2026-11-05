@@ -61,6 +61,8 @@ As formas dos dois grupos são quase iguais (0,51 e 0,53). Isso mostra que o bot
 
 Em cada repetição, cada grupo terá **n = 30**, o mesmo tamanho da amostra real.
 
+Os dados simulados são gerados por [`scripts/gerar_dados_simulados.py`](../scripts/gerar_dados_simulados.py), com semente fixa (42), e salvos em [`dados/tempo-ate-merge-simulado.csv`](../dados/tempo-ate-merge-simulado.csv).
+
 ## O que esperamos antes de simular
 
 **Esperamos que o Mann-Whitney se saia melhor**, isto é, que tenha mais poder para detectar a diferença no cenário real. Esperamos também que os dois testes mantenham a taxa de falso positivo perto de 5% no cenário sem diferença.

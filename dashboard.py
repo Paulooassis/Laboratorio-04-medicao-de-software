@@ -3,8 +3,9 @@
 Uso: streamlit run dashboard.py
 
 Mostra os dados gerados por código do repositório: os dados reais (scripts/coletar_prs.py) e os
-simulados (scripts/gerar_dados_simulados.py, via python main.py). As seções seguem a ordem da seção 4
-do enunciado. G1 está pronto; G2 a G4 entram nas Issues seguintes, usando as cores definidas aqui.
+simulados (scripts/gerar_dados_simulados.py) e os testes aplicados a eles (scripts/aplicar_testes.py,
+os dois via python main.py). As seções seguem a ordem da seção 4 do enunciado. G1 e G2 estão prontos;
+G3 e G4 entram na Lab04S02, usando as cores definidas aqui.
 """
 import csv
 import os
@@ -15,6 +16,7 @@ import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
+from scipy import stats
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(RAIZ, "scripts"))
@@ -24,8 +26,9 @@ import aplicar_testes  # noqa: E402
 DADOS_REAIS = os.path.join(RAIZ, "dados", "tempo-ate-merge-langflow.csv")
 DADOS_SIMULADOS = os.path.join(RAIZ, "dados", "tempo-ate-merge-simulado.csv")
 
-# Cenário simulado mostrado ao lado dos dados reais: é o que reproduz a diferença observada neles.
+# Cenário simulado usado no G1 e no exemplo do G2: é o que reproduz a diferença observada nos reais.
 CENARIO_REAL = "diferenca_real"
+ALFA = aplicar_testes.ALFA
 
 LINK_REPOSITORIO = "https://github.com/Paulooassis/Laboratorio-04-medicao-de-software"
 LINK_PROJECTS = "https://github.com/users/Paulooassis/projects/4"
@@ -103,6 +106,94 @@ def grafico_g1(reais, simulados, bins_por_decada=4):
     return fig
 
 
+@st.cache_data
+def aplicar_os_testes(cenario):
+    """Os dois testes aplicados ao mesmo par de amostras do cenário, por scripts/aplicar_testes.py."""
+    grupos = carregar_dados_simulados()[cenario]
+    sem_bot, com_bot = grupos["sem_bot"], grupos["com_bot"]
+    return (aplicar_testes.teste_welch(sem_bot, com_bot),
+            aplicar_testes.teste_mann_whitney(sem_bot, com_bot),
+            (len(sem_bot), len(com_bot)))
+
+
+def br(valor, casas=2):
+    """Número com a vírgula decimal usada no resto do dashboard."""
+    return f"{valor:.{casas}f}".replace(".", ",")
+
+
+def rgba(cor_hex, opacidade):
+    """Converte #rrggbb em rgba(), para as áreas sombreadas do G2."""
+    r, g, b = (int(cor_hex[i:i + 2], 16) for i in (1, 3, 5))
+    return f"rgba({r}, {g}, {b}, {opacidade})"
+
+
+def z_de_u(u, n_sem, n_com):
+    """Padroniza U pela média e pelo desvio sob H0: é a aproximação normal que o teste usa com n = 30."""
+    media = n_sem * n_com / 2
+    desvio = np.sqrt(n_sem * n_com * (n_sem + n_com + 1) / 12)
+    return (u - media) / desvio
+
+
+def caudas(x, y, corte, nome, cor, mostrar_legenda, ordem):
+    """As duas caudas da densidade além de ±corte, sombreadas: os testes são bilaterais."""
+    for i, mascara in enumerate((x <= -corte, x >= corte)):
+        yield go.Scatter(
+            x=x[mascara], y=y[mascara], fill="tozeroy", fillcolor=cor, line={"width": 0},
+            name=nome, legendgroup=nome, showlegend=mostrar_legenda and i == 0,
+            legendrank=ordem, hoverinfo="skip",
+        )
+
+
+def grafico_g2(welch, mann_whitney, n):
+    """G2: a distribuição da estatística sob H0, com a região de rejeição e o p-valor de um exemplo."""
+    paineis = (
+        {"teste": "t de Welch", "distribuicao": stats.t(df=welch["gl"]), "simbolo": "t",
+         "estatistica": welch["estatistica"], "p_valor": welch["p_valor"],
+         "eixo": "Estatística t (adimensional)",
+         "titulo": f"t de Welch: t de Student, {br(welch['gl'], 1)} graus de liberdade"},
+        {"teste": "Mann-Whitney", "distribuicao": stats.norm(), "simbolo": "z",
+         "estatistica": z_de_u(mann_whitney["estatistica"], *n), "p_valor": mann_whitney["p_valor"],
+         "eixo": "Estatística U padronizada, z (adimensional)",
+         "titulo": f"Mann-Whitney: normal padrão, U padronizado (n = {n[0]} + {n[1]})"},
+    )
+    fig = make_subplots(rows=1, cols=2, shared_yaxes=True, horizontal_spacing=0.06,
+                        subplot_titles=[painel["titulo"] for painel in paineis])
+    for coluna, painel in enumerate(paineis, start=1):
+        distribuicao, cor = painel["distribuicao"], CORES_TESTES[painel["teste"]]
+        critico = distribuicao.ppf(1 - ALFA / 2)
+        observada = abs(painel["estatistica"])
+        # os cortes entram no eixo para que as áreas fechem exatamente neles, sem degrau
+        x = np.unique(np.concatenate([np.linspace(-4.2, 4.2, 600),
+                                      [-critico, critico, -observada, observada]]))
+        y = distribuicao.pdf(x)
+
+        traces = [
+            *caudas(x, y, observada, f"Área do p-valor ({painel['teste']})", rgba(cor, 0.45), True, 20 + coluna),
+            *caudas(x, y, critico, f"Região de rejeição (α = {br(ALFA * 100, 0)}%)",
+                    "rgba(80, 80, 80, 0.45)", coluna == 1, 30),
+            go.Scatter(x=x, y=y, mode="lines", line={"color": cor, "width": 2.5},
+                       name=f"Densidade sob H₀ ({painel['teste']})", legendrank=10 + coluna,
+                       hovertemplate=f"{painel['simbolo']} = %{{x:.2f}} | densidade %{{y:.3f}}<extra></extra>"),
+        ]
+        for trace in traces:
+            fig.add_trace(trace, row=1, col=coluna)
+        fig.add_vline(
+            x=painel["estatistica"], line={"color": cor, "width": 2, "dash": "dash"}, row=1, col=coluna,
+            annotation={"text": f"{painel['simbolo']} = {br(painel['estatistica'])}"
+                                f" | p = {br(painel['p_valor'], 3)}",
+                        "font": {"color": cor}, "yshift": 2},
+            annotation_position="top right",
+        )
+        fig.update_xaxes(title_text=painel["eixo"], range=[-4.2, 4.2], row=1, col=coluna)
+
+    fig.update_layout(
+        title="G2 — Distribuição da estatística sob H₀, região de rejeição e p-valor de um exemplo",
+        height=440, margin={"t": 90}, legend={"traceorder": "normal"},
+    )
+    fig.update_yaxes(title_text="Densidade de probabilidade", row=1, col=1)
+    return fig
+
+
 def em_construcao(conteudo, onde):
     st.info(f"{conteudo}: em construção ({onde}).", icon=":material/construction:")
 
@@ -167,8 +258,34 @@ def secao_dados():
 
 
 def secao_testes():
+    welch, mann_whitney, n = aplicar_os_testes(CENARIO_REAL)
+    criticos = (stats.t(df=welch["gl"]).ppf(1 - ALFA / 2), stats.norm().ppf(1 - ALFA / 2))
+
     st.header("3. Como os testes funcionam")
-    em_construcao("G2, distribuição da estatística sob H₀", "Issue #8")
+    st.plotly_chart(grafico_g2(welch, mann_whitney, n))
+    st.markdown(
+        "**O que o gráfico mostra.** Cada curva é a distribuição que a estatística do teste segue "
+        "**quando H₀ é verdadeira**: a t de Student no t de Welch e a normal padrão no U padronizado do "
+        "Mann-Whitney. A faixa cinza nas duas pontas é a região de rejeição, os "
+        f"{br(ALFA * 100, 0)}% de resultados mais extremos que levariam a rejeitar H₀ "
+        f"(|t| > {br(criticos[0])} e |z| > {br(criticos[1])}); ela aparece nas duas caudas porque os testes "
+        "são bilaterais. A linha tracejada é a estatística obtida em um exemplo, o conjunto simulado do "
+        "cenário com diferença real, e a área colorida é o **p-valor**: a chance de um resultado tão ou mais "
+        "extremo se H₀ fosse verdadeira.\n\n"
+        "**O que concluímos.** Nos dois testes a área do p-valor é bem maior que os "
+        f"{br(ALFA * 100, 0)}% da região de rejeição (p = {br(welch['p_valor'], 3)} no t de Welch e "
+        f"p = {br(mann_whitney['p_valor'], 3)} no Mann-Whitney) e a estatística cai fora dela, então "
+        "nenhum dos dois rejeita H₀. Como fomos nós que geramos esses dados, sabemos que H₀ é falsa nesse "
+        "cenário: os dois testes cometeram um **erro tipo II**. É isso que as seções 4 e 5 vão medir com "
+        "repetições, em vez de um único exemplo."
+    )
+    st.caption(
+        f"Estatísticas calculadas por `scripts/aplicar_testes.py` sobre o cenário `{CENARIO_REAL}` de "
+        f"`dados/tempo-ate-merge-simulado.csv`. O Mann-Whitney é mostrado com U padronizado "
+        f"(z = (U − n₁n₂/2) / √(n₁n₂(n₁+n₂+1)/12)), a aproximação normal que o teste usa nesse tamanho de "
+        f"amostra; o p-valor exibido é o do próprio teste. Detalhes em "
+        f"[testes-nos-dados-simulados.md]({LINK_REPOSITORIO}/blob/main/docs/testes-nos-dados-simulados.md)."
+    )
 
 
 def secao_erro_tipo_i():

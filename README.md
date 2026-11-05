@@ -25,7 +25,14 @@ O `main.py` roda tudo do início ao fim, com semente fixa (`numpy.random.default
 streamlit run dashboard.py
 ```
 
-Abre o dashboard no navegador, em `http://localhost:8501`. Ele é feito em [Streamlit](https://streamlit.io/), segue as seções da entrega final (Cenário, Os dados, Como os testes funcionam, Erro tipo I, Poder, Dados reais e Conclusão) e mostra no topo os links do repositório e do [GitHub Projects](https://github.com/users/Paulooassis/projects/4). Os gráficos G1 a G4 entram nas próximas Issues.
+Abre o dashboard no navegador, em `http://localhost:8501`. Ele é feito em [Streamlit](https://streamlit.io/), segue as seções da entrega final (Cenário, Os dados, Como os testes funcionam, Erro tipo I, Poder, Dados reais e Conclusão) e mostra no topo os links do repositório e do [GitHub Projects](https://github.com/users/Paulooassis/projects/4).
+
+Dois gráficos já estão prontos, gerados a partir dos CSVs do repositório:
+
+- **G1** (seção *Os dados*): o tempo até o merge dos PRs, com um histograma por grupo, nos dados reais ao lado dos simulados. O eixo é logarítmico porque os tempos vão de segundos a semanas.
+- **G2** (seção *Como os testes funcionam*): a distribuição que a estatística de cada teste segue quando H0 é verdadeira, com a região de rejeição (α = 0,05, bilateral) e a área do p-valor de um exemplo.
+
+Os gráficos G3 (erro tipo I) e G4 (poder) entram na Lab04S02.
 
 ### Outros scripts
 

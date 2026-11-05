@@ -1,0 +1,5 @@
+cenario,teste,estatistica,gl,p_valor,efeito,nome_efeito,rejeita_h0
+diferenca_real,t de Welch,1.1338,33.29,0.264987,14.4461,diferença de médias (h),False
+diferenca_real,Mann-Whitney,543.0000,,0.171450,0.6033,P(X_sem_bot < X_com_bot),False
+sem_diferenca,t de Welch,-0.7043,39.87,0.485346,-5.5850,diferença de médias (h),False
+sem_diferenca,Mann-Whitney,441.0000,,0.899995,0.4900,P(X_sem_bot < X_com_bot),False

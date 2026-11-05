@@ -19,6 +19,14 @@ O `main.py` roda tudo do início ao fim, com semente fixa (`numpy.random.default
 1. **Gera os dados simulados** (`scripts/gerar_dados_simulados.py`): um conjunto para cada cenário (`diferenca_real` e `sem_diferenca`), com 30 PRs por grupo sorteados das distribuições Weibull definidas no cenário. Salva em [`dados/tempo-ate-merge-simulado.csv`](dados/tempo-ate-merge-simulado.csv).
 2. **Aplica os dois testes** (`scripts/aplicar_testes.py`): o t de Welch e o Mann-Whitney ao mesmo conjunto de dados de cada cenário, mostrando a estatística, o p-valor, o tamanho do efeito e a decisão sobre H0. Salva em [`resultados/testes-dados-simulados.csv`](resultados/testes-dados-simulados.csv).
 
+### Abrir o dashboard
+
+```
+streamlit run dashboard.py
+```
+
+Abre o dashboard no navegador, em `http://localhost:8501`. Ele é feito em [Streamlit](https://streamlit.io/), segue as seções da entrega final (Cenário, Os dados, Como os testes funcionam, Erro tipo I, Poder, Dados reais e Conclusão) e mostra no topo os links do repositório e do [GitHub Projects](https://github.com/users/Paulooassis/projects/4). Os gráficos G1 a G4 entram nas próximas Issues.
+
 ### Outros scripts
 
 Cada etapa também pode ser rodada sozinha:

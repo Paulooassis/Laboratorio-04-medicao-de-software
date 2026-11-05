@@ -78,4 +78,5 @@ Motivos:
 ```
 pip install -r requirements.txt
 python scripts/parametros_simulacao.py
+python main.py
 ```

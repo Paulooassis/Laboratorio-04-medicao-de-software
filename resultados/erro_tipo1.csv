@@ -1,0 +1,3 @@
+situacao,teste,efeito,n,taxa_rejeicao
+ideal,t de Welch,0,30,0.0323
+ideal,Mann-Whitney,0,30,0.0497

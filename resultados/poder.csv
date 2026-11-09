@@ -1,0 +1,13 @@
+situacao,teste,efeito,n,taxa_rejeicao
+ideal,t de Welch,0,30,0.0323
+ideal,Mann-Whitney,0,30,0.0497
+ideal,t de Welch,2,30,0.0810
+ideal,Mann-Whitney,2,30,0.0982
+ideal,t de Welch,5,30,0.2306
+ideal,Mann-Whitney,5,30,0.2635
+ideal,t de Welch,10,30,0.4783
+ideal,Mann-Whitney,10,30,0.5424
+ideal,t de Welch,15,30,0.6530
+ideal,Mann-Whitney,15,30,0.7215
+ideal,t de Welch,20,30,0.7537
+ideal,Mann-Whitney,20,30,0.8331

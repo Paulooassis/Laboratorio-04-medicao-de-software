@@ -27,6 +27,10 @@ GRUPOS = ["sem_bot", "com_bot"]
 SEM_BOT = {"forma": 0.51, "escala": 8.2}
 COM_BOT = {"forma": 0.53, "escala": 27.2}
 
+# Outlier situation: the largest real time to merge (com_bot) appears in 1 of every 30 PRs.
+OUTLIER_PROB = 1 / 30
+OUTLIER_VALUE = 325.7
+
 CENARIOS = {
     "diferenca_real": {"sem_bot": SEM_BOT, "com_bot": COM_BOT},  # H0 falsa: mede o poder
     "sem_diferenca": {"sem_bot": SEM_BOT, "com_bot": SEM_BOT},   # H0 verdadeira: mede o erro tipo I
@@ -36,6 +40,20 @@ CENARIOS = {
 def gerar_weibull(rng, forma, escala, n):
     """Sorteia n tempos (em horas) de uma Weibull com a forma e a escala dadas."""
     return escala * rng.weibull(forma, size=n)
+
+
+def gerar_weibull_outliers(rng, forma, escala, n, outlier_prob=OUTLIER_PROB, outlier_value=OUTLIER_VALUE):
+    """Draw n times (in hours) from a Weibull and replace some of them with an outlier.
+
+    Each value becomes outlier_value with probability outlier_prob. The defaults come from the
+    real data: 325.7 h is the largest time to merge observed in the real sample (com_bot group),
+    and 1/30 stands for that single case among the 30 PRs of the group. The outliers are injected
+    in both groups, so H0 stays true when the two Weibulls are the same.
+    """
+    x = gerar_weibull(rng, forma, escala, n)
+    mask = rng.random(n) < outlier_prob
+    x[mask] = outlier_value
+    return x
 
 
 def gerar_cenario(rng, cenario, n=N_POR_GRUPO):

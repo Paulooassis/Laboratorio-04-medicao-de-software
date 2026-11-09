@@ -1,0 +1,13 @@
+situacao,teste,efeito,n,taxa_rejeicao
+violada,t de Welch,0,30,0.0302
+violada,Mann-Whitney,0,30,0.0468
+violada,t de Welch,2,30,0.0568
+violada,Mann-Whitney,2,30,0.0930
+violada,t de Welch,5,30,0.1495
+violada,Mann-Whitney,5,30,0.2433
+violada,t de Welch,10,30,0.3121
+violada,Mann-Whitney,10,30,0.4983
+violada,t de Welch,15,30,0.4670
+violada,Mann-Whitney,15,30,0.6836
+violada,t de Welch,20,30,0.5894
+violada,Mann-Whitney,20,30,0.7962

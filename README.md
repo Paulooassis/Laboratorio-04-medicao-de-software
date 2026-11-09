@@ -44,3 +44,15 @@ Cada etapa também pode ser rodada sozinha:
 | `python scripts/aplicar_testes.py` | Só a etapa 2, a partir do CSV já gerado |
 | `python scripts/coletar_prs.py` | Coleta os dados reais pela API do GitHub e gera `dados/tempo-ate-merge-langflow.csv` |
 | `python scripts/parametros_simulacao.py` | Descreve os dados reais e ajusta as distribuições candidatas para a simulação |
+
+#### Simulação de Monte Carlo
+
+A função `run_simulation` (`scripts/simulacao.py`) gera vários conjuntos de dados simulados e aplica o t de Welch e o Mann-Whitney ao mesmo par de amostras em cada repetição, devolvendo os p-valores dos dois testes. Ela não conhece nenhum cenário: para trocar de cenário, basta passar outro gerador ou outros parâmetros. Exemplo, a partir da raiz do repositório:
+
+```python
+from scripts.gerar_dados_simulados import gerar_weibull, SEM_BOT, COM_BOT
+from scripts.simulacao import run_simulation
+
+p_values = run_simulation(gerar_weibull, SEM_BOT, COM_BOT, n=30, repetitions=10_000, seed=42)
+power_welch = (p_values["welch"] < 0.05).mean()
+```

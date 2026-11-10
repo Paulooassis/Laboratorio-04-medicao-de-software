@@ -2,10 +2,10 @@
 
 Uso: streamlit run dashboard.py
 
-Mostra os dados gerados por código do repositório: os dados reais (scripts/coletar_prs.py) e os
-simulados (scripts/gerar_dados_simulados.py) e os testes aplicados a eles (scripts/aplicar_testes.py,
-os dois via python main.py). As seções seguem a ordem da seção 4 do enunciado. G1 e G2 estão prontos;
-G3 e G4 entram na Lab04S02, usando as cores definidas aqui.
+Mostra os dados gerados por código do repositório: os dados reais (scripts/coletar_prs.py), os
+simulados (scripts/gerar_dados_simulados.py) e os resultados dos testes e das simulações, todos
+regenerados por python main.py. As seções seguem a ordem da seção 4 do enunciado, e cada teste e
+cada grupo têm sempre a cor definida aqui.
 """
 import csv
 import os
@@ -22,6 +22,7 @@ RAIZ = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(RAIZ, "scripts"))
 
 import aplicar_testes  # noqa: E402
+import gerar_dados_simulados  # noqa: E402
 
 DADOS_REAIS = os.path.join(RAIZ, "dados", "tempo-ate-merge-langflow.csv")
 DADOS_SIMULADOS = os.path.join(RAIZ, "dados", "tempo-ate-merge-simulado.csv")
@@ -130,10 +131,13 @@ def rgba(cor_hex, opacidade):
 
 
 def z_de_u(u, n_sem, n_com):
-    """Padroniza U pela média e pelo desvio sob H0: é a aproximação normal que o teste usa com n = 30."""
+    """Padroniza U como o mannwhitneyu no p-valor assintótico, com a correção de continuidade de 0,5.
+
+    Sem a correção, a área sombreada no G2 ficaria cerca de 1% menor que o p-valor exibido ao lado.
+    """
     media = n_sem * n_com / 2
     desvio = np.sqrt(n_sem * n_com * (n_sem + n_com + 1) / 12)
-    return (u - media) / desvio
+    return np.sign(u - media) * max(abs(u - media) - 0.5, 0) / desvio
 
 
 def caudas(x, y, corte, nome, cor, mostrar_legenda, ordem):
@@ -292,24 +296,32 @@ def secao_cenario():
 def secao_dados():
     reais = carregar_dados_reais()
     simulados = carregar_dados_simulados()[CENARIO_REAL]
+    sem, com = gerar_dados_simulados.SEM_BOT, gerar_dados_simulados.COM_BOT
+    maior = max(x.max() for x in reais.values())
 
     st.header("2. Os dados")
     st.plotly_chart(grafico_g1(reais, simulados))
     st.markdown(
-        "**O que o gráfico mostra.** Com o eixo em escala logarítmica, os quatro histogramas têm o mesmo "
-        "formato: a maior parte dos PRs é mergeada em poucas horas e uma cauda se estende até centenas de "
-        "horas. Nas duas fontes, o grupo **com bot** está deslocado para a direita, ou seja, concentra os "
-        "PRs mais demorados, que é a diferença que a simulação precisa reproduzir.\n\n"
-        "**O que concluímos.** A Weibull ajustada reproduz a posição e a cauda dos dados reais e serve como "
-        "substituta deles nas simulações das próximas seções; a diferença que sobra é que os dados reais "
-        "têm alguns PRs mergeados em segundos, que a Weibull não gera. Esse formato, bem assimétrico mesmo "
-        "com n = 30 por grupo, é justamente o caso em que o pressuposto de normalidade do t de Welch fica "
-        "em dúvida — é o que as próximas seções vão testar."
+        "**O que o gráfico mostra.** Nos dados reais e nos simulados, a maior parte dos PRs é mergeada em "
+        f"poucas horas e uma cauda longa chega a centenas de horas (o maior caso real levou {br(maior, 1)} h): "
+        f"a distribuição é muito assimétrica, com coeficiente de assimetria de {br(stats.skew(reais['sem_bot']))} "
+        f"sem bot e {br(stats.skew(reais['com_bot']))} com bot, e o grupo **com bot** fica deslocado para "
+        "a direita.\n\n"
+        "**O que concluímos.** Os parâmetros da simulação vêm de um ajuste por máxima verossimilhança aos "
+        "dados reais: entre Weibull, gamma e lognormal, a Weibull teve o menor AIC nos dois grupos "
+        f"(sem bot: forma {br(sem['forma'])} e escala {br(sem['escala'], 1)} h; com bot: forma "
+        f"{br(com['forma'])} e escala {br(com['escala'], 1)} h) e reproduz a mediana e a cauda observadas. "
+        "Como as formas são quase iguais, o bot mudou a escala do tempo e não o formato, e por isso a "
+        "simulação cria os efeitos mudando só a escala; o que a Weibull não reproduz são os poucos PRs "
+        "mergeados em segundos. Com essa assimetria, mesmo com n = 30 por grupo o pressuposto de "
+        "normalidade do t de Welch fica em dúvida, e é isso que as seções 4 e 5 testam."
     )
     st.caption(
         f"Dados reais: `dados/tempo-ate-merge-langflow.csv` (`scripts/coletar_prs.py`). Simulados: "
         f"`dados/tempo-ate-merge-simulado.csv`, cenário `{CENARIO_REAL}` com n = "
-        f"{len(simulados['sem_bot'])} por grupo e semente fixa (`scripts/gerar_dados_simulados.py`)."
+        f"{len(simulados['sem_bot'])} por grupo e semente fixa (`scripts/gerar_dados_simulados.py`). "
+        f"Ajuste e comparação pelo AIC em "
+        f"[cenario-e-hipoteses.md]({LINK_REPOSITORIO}/blob/main/docs/cenario-e-hipoteses.md)."
     )
 
 
@@ -320,27 +332,25 @@ def secao_testes():
     st.header("3. Como os testes funcionam")
     st.plotly_chart(grafico_g2(welch, mann_whitney, n))
     st.markdown(
-        "**O que o gráfico mostra.** Cada curva é a distribuição que a estatística do teste segue "
-        "**quando H₀ é verdadeira**: a t de Student no t de Welch e a normal padrão no U padronizado do "
-        "Mann-Whitney. A faixa cinza nas duas pontas é a região de rejeição, os "
-        f"{br(ALFA * 100, 0)}% de resultados mais extremos que levariam a rejeitar H₀ "
-        f"(|t| > {br(criticos[0])} e |z| > {br(criticos[1])}); ela aparece nas duas caudas porque os testes "
-        "são bilaterais. A linha tracejada é a estatística obtida em um exemplo, o conjunto simulado do "
-        "cenário com diferença real, e a área colorida é o **p-valor**: a chance de um resultado tão ou mais "
-        "extremo se H₀ fosse verdadeira.\n\n"
-        "**O que concluímos.** Nos dois testes a área do p-valor é bem maior que os "
-        f"{br(ALFA * 100, 0)}% da região de rejeição (p = {br(welch['p_valor'], 3)} no t de Welch e "
-        f"p = {br(mann_whitney['p_valor'], 3)} no Mann-Whitney) e a estatística cai fora dela, então "
-        "nenhum dos dois rejeita H₀. Como fomos nós que geramos esses dados, sabemos que H₀ é falsa nesse "
-        "cenário: os dois testes cometeram um **erro tipo II**. É isso que as seções 4 e 5 vão medir com "
-        "repetições, em vez de um único exemplo."
+        "**O que o gráfico mostra.** O t de Welch compara as **médias** dos dois grupos, dividindo a "
+        "diferença pelo erro-padrão, e o Mann-Whitney compara os **postos**, contando em quantos dos "
+        f"{n[0] * n[1]} pares possíveis o PR com bot foi o mais lento; cada curva é a distribuição dessa "
+        "estatística quando H₀ é verdadeira (t de Student e normal padrão, respectivamente). A faixa cinza é "
+        f"a região de rejeição, os {br(ALFA * 100, 0)}% de resultados mais extremos (|t| > {br(criticos[0])} "
+        f"e |z| > {br(criticos[1])}), dividida entre as duas caudas porque os testes são bilaterais.\n\n"
+        "**O que concluímos.** A área colorida é o **p-valor** do exemplo, o conjunto simulado com diferença "
+        "real: a probabilidade de uma estatística tão ou mais extrema **se H₀ fosse verdadeira**, e não a "
+        f"probabilidade de H₀ ser verdadeira; ela vale {br(welch['p_valor'], 3)} no t de Welch e "
+        f"{br(mann_whitney['p_valor'], 3)} no Mann-Whitney, acima de {br(ALFA * 100, 0)}%, então nenhum dos "
+        "dois rejeita H₀. Como geramos esses dados com diferença, sabemos que os dois cometeram um **erro "
+        "tipo II**, e as seções 4 e 5 medem com que frequência isso acontece em 10.000 repetições."
     )
     st.caption(
         f"Estatísticas calculadas por `scripts/aplicar_testes.py` sobre o cenário `{CENARIO_REAL}` de "
-        f"`dados/tempo-ate-merge-simulado.csv`. O Mann-Whitney é mostrado com U padronizado "
-        f"(z = (U − n₁n₂/2) / √(n₁n₂(n₁+n₂+1)/12)), a aproximação normal que o teste usa nesse tamanho de "
-        f"amostra; o p-valor exibido é o do próprio teste. Detalhes em "
-        f"[testes-nos-dados-simulados.md]({LINK_REPOSITORIO}/blob/main/docs/testes-nos-dados-simulados.md)."
+        f"`dados/tempo-ate-merge-simulado.csv`. O Mann-Whitney é mostrado com U padronizado, "
+        f"z = (|U − n₁n₂/2| − 0,5) / √(n₁n₂(n₁+n₂+1)/12), com a mesma correção de continuidade que o próprio "
+        f"teste usa nesse tamanho de amostra; por isso a área sombreada é exatamente o p-valor exibido. "
+        f"Detalhes em [testes-nos-dados-simulados.md]({LINK_REPOSITORIO}/blob/main/docs/testes-nos-dados-simulados.md)."
     )
 
 

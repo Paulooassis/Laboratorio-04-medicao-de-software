@@ -1,0 +1,39 @@
+situacao,teste,efeito,n,taxa_rejeicao
+ideal,t de Welch,9.63,10,0.0845
+ideal,Mann-Whitney,9.63,10,0.1939
+ideal,t de Welch,9.63,20,0.2687
+ideal,Mann-Whitney,9.63,20,0.3789
+ideal,t de Welch,9.63,30,0.4606
+ideal,Mann-Whitney,9.63,30,0.5243
+ideal,t de Welch,9.63,50,0.7504
+ideal,Mann-Whitney,9.63,50,0.7566
+ideal,t de Welch,9.63,60,0.8296
+ideal,Mann-Whitney,9.63,60,0.8330
+ideal,t de Welch,9.63,75,0.9076
+ideal,Mann-Whitney,9.63,75,0.9056
+ideal,t de Welch,9.63,100,0.9684
+ideal,Mann-Whitney,9.63,100,0.9670
+ideal,t de Welch,9.63,150,0.9966
+ideal,Mann-Whitney,9.63,150,0.9974
+violada,t de Welch,9.63,10,0.0641
+violada,Mann-Whitney,9.63,10,0.1698
+violada,t de Welch,9.63,20,0.1930
+violada,Mann-Whitney,9.63,20,0.3322
+violada,t de Welch,9.63,30,0.2995
+violada,Mann-Whitney,9.63,30,0.4826
+violada,t de Welch,9.63,50,0.4869
+violada,Mann-Whitney,9.63,50,0.7030
+violada,t de Welch,9.63,60,0.5621
+violada,Mann-Whitney,9.63,60,0.7732
+violada,t de Welch,9.63,75,0.6736
+violada,Mann-Whitney,9.63,75,0.8699
+violada,t de Welch,9.63,100,0.8103
+violada,Mann-Whitney,9.63,100,0.9477
+violada,t de Welch,9.63,150,0.9345
+violada,Mann-Whitney,9.63,150,0.9924
+ideal,t de Welch,1,30,0.0482
+ideal,Mann-Whitney,1,30,0.0615
+ideal,t de Welch,1,1000,0.6343
+ideal,Mann-Whitney,1,1000,0.5860
+ideal,t de Welch,1,3000,0.9781
+ideal,Mann-Whitney,1,3000,0.9664

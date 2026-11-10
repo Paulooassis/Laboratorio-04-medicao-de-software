@@ -9,7 +9,9 @@
 
 ## Justificativa
 
-O P1 é o par mais equilibrado nos quatro critérios avaliados. Os tempos até o merge são fáceis de coletar e de simular (distribuição lognormal), e violam a normalidade de forma natural, com forte assimetria à direita e outliers (PRs esquecidos por semanas), o que torna relevante comparar o teste paramétrico com o não paramétrico. Por envolver apenas dois grupos independentes, o resultado também é simples de explicar na apresentação oral. O cuidado necessário é escolher um repositório em que a adoção do bot tenha uma data clara, para separar os grupos sem ambiguidade.
+O P1 é o par mais equilibrado nos quatro critérios avaliados. Os tempos até o merge são fáceis de coletar e de simular com uma distribuição assimétrica à direita, e violam a normalidade de forma natural, com forte assimetria à direita e outliers (PRs esquecidos por semanas), o que torna relevante comparar o teste paramétrico com o não paramétrico. Por envolver apenas dois grupos independentes, o resultado também é simples de explicar na apresentação oral. O cuidado necessário é escolher um repositório em que a adoção do bot tenha uma data clara, para separar os grupos sem ambiguidade.
+
+> **Distribuição usada na simulação.** Na escolha do par, a lognormal era a candidata mais óbvia para simular tempos até o merge, e por isso aparece na tabela abaixo. Depois da coleta, as três distribuições candidatas (Weibull, gamma e lognormal) foram ajustadas aos dados reais, e a **Weibull** foi escolhida por ter o menor AIC nos dois grupos. A lognormal exagerava a cauda por causa dos PRs mergeados em menos de 1 minuto. O ajuste e a justificativa estão em [cenario-e-hipoteses.md](cenario-e-hipoteses.md).
 
 ## Tabela de comparação
 

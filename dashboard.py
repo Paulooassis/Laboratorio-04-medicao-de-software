@@ -25,6 +25,7 @@ import aplicar_testes  # noqa: E402
 
 DADOS_REAIS = os.path.join(RAIZ, "dados", "tempo-ate-merge-langflow.csv")
 DADOS_SIMULADOS = os.path.join(RAIZ, "dados", "tempo-ate-merge-simulado.csv")
+RESULTADOS_SIMULACAO = os.path.join(RAIZ, "resultados", "simulacao.csv")
 
 # Cenário simulado usado no G1 e no exemplo do G2: é o que reproduz a diferença observada nos reais.
 CENARIO_REAL = "diferenca_real"
@@ -40,6 +41,7 @@ LINK_DASHBOARD = ""
 CORES_TESTES = {"t de Welch": "#2a78d6", "Mann-Whitney": "#eb6834"}
 CORES_GRUPOS = {"sem_bot": "#008300", "com_bot": "#6250d6"}
 NOMES_GRUPOS = {"sem_bot": "Sem bot", "com_bot": "Com bot"}
+NOMES_SITUACOES = {"ideal": "Cenário ideal", "violada": "Cenário com outliers"}
 
 
 @st.cache_data
@@ -191,6 +193,60 @@ def grafico_g2(welch, mann_whitney, n):
         height=440, margin={"t": 90}, legend={"traceorder": "normal"},
     )
     fig.update_yaxes(title_text="Densidade de probabilidade", row=1, col=1)
+    return fig
+
+
+@st.cache_data
+def carregar_simulacao():
+    """Taxa de rejeição por situação, teste e efeito, de resultados/simulacao.csv.
+
+    Consolida resultados/erro_tipo1.csv, poder.csv e violacao.csv (scripts/consolidar_resultados.py);
+    o efeito 0 de cada situação é o erro tipo I, e os demais formam a curva de poder.
+    """
+    with open(RESULTADOS_SIMULACAO, encoding="utf-8") as arquivo:
+        linhas = list(csv.DictReader(arquivo))
+    return [
+        {"situacao": l["situacao"], "teste": l["teste"], "efeito": int(l["efeito"]),
+         "n": int(l["n"]), "taxa_rejeicao": float(l["taxa_rejeicao"])}
+        for l in linhas
+    ]
+
+
+def grafico_g4(linhas):
+    """G4: a taxa de rejeição dos dois testes por tamanho do efeito, no cenário ideal e com outliers.
+
+    O efeito em 0 é o erro tipo I (G3): aparece aqui como o primeiro ponto de cada curva, para que a
+    curva de poder comece exatamente onde o G3 termina, em vez de repetir uma simulação separada.
+    """
+    situacoes = [s for s in NOMES_SITUACOES if any(l["situacao"] == s for l in linhas)]
+    fig = make_subplots(rows=1, cols=len(situacoes), shared_yaxes=True, horizontal_spacing=0.06,
+                        subplot_titles=[NOMES_SITUACOES[s] for s in situacoes])
+    for coluna, situacao in enumerate(situacoes, start=1):
+        for teste, cor in CORES_TESTES.items():
+            pontos = sorted((l["efeito"], l["taxa_rejeicao"]) for l in linhas
+                            if l["situacao"] == situacao and l["teste"] == teste)
+            efeitos, taxas = zip(*pontos)
+            fig.add_trace(
+                go.Scatter(
+                    x=efeitos, y=taxas, mode="lines+markers", name=teste, legendgroup=teste,
+                    showlegend=coluna == 1, line={"color": cor, "width": 2.5}, marker={"size": 7},
+                    hovertemplate=f"{teste}<br>efeito %{{x}} h | rejeita %{{y:.1%}}<extra></extra>",
+                ),
+                row=1, col=coluna,
+            )
+        fig.add_hline(
+            y=ALFA, line={"color": "rgba(80, 80, 80, 0.6)", "width": 1.5, "dash": "dash"}, row=1, col=coluna,
+            annotation={"text": f"α = {br(ALFA * 100, 0)}%", "font": {"size": 11, "color": "rgba(80, 80, 80, 1)"}},
+            annotation_position="bottom right",
+        )
+        fig.update_xaxes(title_text="Tamanho do efeito (diferença de mediana, horas)", row=1, col=coluna)
+
+    fig.update_layout(
+        title="G4 — Poder dos dois testes: proporção de rejeições × tamanho do efeito",
+        height=440, margin={"t": 90}, legend_title_text="Teste",
+    )
+    fig.update_yaxes(title_text="Taxa de rejeição (proporção de p < α)", range=[0, 1], tickformat=".0%",
+                     row=1, col=1)
     return fig
 
 

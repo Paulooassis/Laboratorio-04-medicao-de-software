@@ -12,6 +12,8 @@ Testes de hipótese por dentro: comparação entre o **t de Welch** e o **Mann-W
 
 ## Como rodar
 
+Testado com Python 3.14 em um clone limpo. As versões das dependências estão fixadas em `requirements.txt`, para que os resultados sejam os mesmos em qualquer máquina.
+
 ```
 pip install -r requirements.txt
 python main.py

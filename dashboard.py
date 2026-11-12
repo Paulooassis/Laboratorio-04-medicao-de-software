@@ -28,6 +28,7 @@ from scripts.poder import REPETITIONS  # noqa: E402
 DADOS_REAIS = os.path.join(RAIZ, "dados", "tempo-ate-merge-langflow.csv")
 DADOS_SIMULADOS = os.path.join(RAIZ, "dados", "tempo-ate-merge-simulado.csv")
 RESULTADOS_SIMULACAO = os.path.join(RAIZ, "resultados", "simulacao.csv")
+RESULTADOS_REAIS = os.path.join(RAIZ, "resultados", "testes-dados-reais.csv")
 
 # Cenário simulado usado no G1 e no exemplo do G2: é o que reproduz a diferença observada nos reais.
 CENARIO_REAL = "diferenca_real"
@@ -422,9 +423,50 @@ def secao_poder():
     )
 
 
+@st.cache_data
+def carregar_testes_reais():
+    """Resultado de cada teste nos dados reais, de resultados/testes-dados-reais.csv."""
+    with open(RESULTADOS_REAIS, encoding="utf-8") as arquivo:
+        return {l["teste"]: l for l in csv.DictReader(arquivo)}
+
+
 def secao_dados_reais():
+    reais = carregar_dados_reais()
+    testes = carregar_testes_reais()
+    welch, mw = testes["t de Welch"], testes["Mann-Whitney"]
+    sem, com = reais["sem_bot"], reais["com_bot"]
+
+    def conclusao(t):
+        return "Rejeita H₀" if t["rejeita_h0"] == "True" else "Não rejeita H₀"
+
     st.header("6. Dados reais")
-    em_construcao("Tabela com os testes aplicados aos dados reais", "Entrega Final")
+    st.markdown(
+        "| Teste | Estatística | p-valor | Tamanho do efeito | Conclusão (α = 5%) |\n"
+        "|---|---:|---:|---|---|\n"
+        f"| t de Welch | t = {br(float(welch['estatistica']))} ({br(float(welch['gl']), 1)} gl) "
+        f"| {br(float(welch['p_valor']), 3)} | diferença de médias = {br(float(welch['efeito']), 1)} h "
+        f"(IC 95%: {br(float(welch['ic_inferior']), 1)} a {br(float(welch['ic_superior']), 1)} h) | {conclusao(welch)} |\n"
+        f"| Mann-Whitney | U = {br(float(mw['estatistica']), 0)} | {br(float(mw['p_valor']), 3)} "
+        f"| P(X<sub>sem bot</sub> < X<sub>com bot</sub>) = {br(float(mw['efeito']))}; "
+        f"Hodges-Lehmann = {br(float(mw['hodges_lehmann']), 1)} h | {conclusao(mw)} |",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"**O que a tabela mostra.** Os {len(sem) + len(com)} PRs reais têm média de {br(sem.mean(), 1)} h sem bot e "
+        f"{br(com.mean(), 1)} h com bot, e mediana de {br(np.median(sem), 1)} h e {br(np.median(com), 1)} h. "
+        f"Os testes **não concordam**: o t de Welch rejeita H₀ (p = {br(float(welch['p_valor']), 3)}) e o "
+        f"Mann-Whitney fica logo acima do limite (p = {br(float(mw['p_valor']), 3)}).\n\n"
+        "**O que concluímos.** A diferença de médias é puxada pelos poucos PRs muito lentos do grupo com bot, e o IC "
+        f"do t de Welch é largo ({br(float(welch['ic_inferior']), 1)} a {br(float(welch['ic_superior']), 1)} h); já o "
+        f"Mann-Whitney indica que um PR com bot demora mais que um sem bot em {br(float(mw['efeito']) * 100, 0)}% dos "
+        f"pares, e a diferença típica entre pares (Hodges-Lehmann) é de só {br(float(mw['hodges_lehmann']), 1)} h. "
+        "Há um indício de que os PRs ficaram mais lentos, de importância prática moderada, mas fraco: com n = 30 os "
+        "dois testes têm cerca de 50% de poder para um efeito desse tamanho (seção 5), então o desacordo não "
+        "surpreende. E o desenho é **antes × depois**, sem experimento controlado: outras mudanças no projeto na "
+        "mesma época podem explicar a diferença, então ela **não pode ser atribuída ao bot**."
+    )
+    st.caption("Calculado por `scripts/testes_dados_reais.py` sobre `dados/tempo-ate-merge-langflow.csv`; "
+               "resultados em `resultados/testes-dados-reais.csv`.")
 
 
 def secao_conclusao():

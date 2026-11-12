@@ -10,6 +10,7 @@ Uso: python main.py
 6. Consolida os resultados da simulação em resultados/simulacao.csv (scripts/consolidar_resultados.py).
 7. Mede o poder com outros tamanhos de amostra (scripts/tamanho_amostra.py).
 8. Compara o erro tipo I e o poder com α = 0,05 e α = 0,01 (scripts/alfa.py).
+9. Aplica os dois testes aos dados reais (scripts/testes_dados_reais.py).
 
 As etapas 3 a 5, 7 e 8 rodam 10.000 repetições por combinação, então a execução completa leva cerca
 de 14 minutos.
@@ -23,6 +24,7 @@ os.chdir(RAIZ)
 
 import aplicar_testes  # noqa: E402
 import gerar_dados_simulados  # noqa: E402
+import testes_dados_reais  # noqa: E402
 from scripts import alfa, consolidar_resultados, erro_tipo1, poder, tamanho_amostra, violacao  # noqa: E402
 
 
@@ -44,6 +46,8 @@ def main():
     tamanho_amostra.main()
     print("\n# 8. Comparando α = 0,05 e α = 0,01")
     alfa.main()
+    print("\n# 9. Aplicando os testes aos dados reais")
+    testes_dados_reais.main()
 
 
 if __name__ == "__main__":

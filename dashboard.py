@@ -399,12 +399,27 @@ def secao_testes():
 
 def secao_erro_tipo_i():
     st.header("4. Erro tipo I")
-    em_construcao("G3, erro tipo I dos dois testes em cada situação", "Lab04S02")
+    st.plotly_chart(grafico_g3(carregar_simulacao()))
+    em_construcao("Texto interpretativo do G3", "Issue #25")
+    repeticoes = f"{REPETITIONS:_}".replace("_", ".")
+    st.caption(
+        f"Taxas do efeito 0 de `resultados/simulacao.csv` ({repeticoes} repetições, semente 42), geradas por "
+        "`scripts/poder.py` e `scripts/violacao.py`. Situação com outliers descrita em "
+        f"[violacao-de-pressuposto.md]({LINK_REPOSITORIO}/blob/main/docs/violacao-de-pressuposto.md); "
+        f"comparação com α = 0,01 em [nivel-de-significancia.md]({LINK_REPOSITORIO}/blob/main/docs/nivel-de-significancia.md)."
+    )
 
 
 def secao_poder():
     st.header("5. Poder")
-    em_construcao("G4, curvas de poder dos dois testes", "Lab04S02")
+    st.plotly_chart(grafico_g4(carregar_simulacao()))
+    em_construcao("Texto interpretativo do G4", "Issue #25")
+    st.caption(
+        "Taxas de rejeição de `resultados/simulacao.csv`, uma curva por situação e teste, geradas por "
+        "`scripts/poder.py` e `scripts/violacao.py`. O efeito é o aumento da mediana do grupo com bot, em "
+        "horas; o de 10 h é próximo do observado nos dados reais. Outros tamanhos de amostra em "
+        f"[tamanho-da-amostra.md]({LINK_REPOSITORIO}/blob/main/docs/tamanho-da-amostra.md)."
+    )
 
 
 def secao_dados_reais():

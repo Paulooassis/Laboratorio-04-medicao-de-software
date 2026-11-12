@@ -400,8 +400,23 @@ def secao_testes():
 
 def secao_erro_tipo_i():
     st.header("4. Erro tipo I")
-    st.plotly_chart(grafico_g3(carregar_simulacao()))
-    em_construcao("Texto interpretativo do G3", "Issue #25")
+    linhas = carregar_simulacao()
+    st.plotly_chart(grafico_g3(linhas))
+    erro = {(l["situacao"], l["teste"]): l["taxa_rejeicao"] for l in linhas if l["efeito"] == 0}
+    margem = margem_simulacao(ALFA)
+
+    def pct(taxa):
+        return f"{br(taxa * 100, 1)}%"
+
+    st.markdown(
+        f"**O que o gráfico mostra.** Com H₀ verdadeira, o Mann-Whitney rejeitou em {pct(erro['ideal', 'Mann-Whitney'])} "
+        f"das amostras no cenário ideal e {pct(erro['violada', 'Mann-Whitney'])} com outliers, dentro da margem da "
+        f"simulação ({pct(ALFA - margem)} a {pct(ALFA + margem)}). O t de Welch ficou abaixo dela nas duas situações: "
+        f"{pct(erro['ideal', 't de Welch'])} e {pct(erro['violada', 't de Welch'])}.\n\n"
+        "**O que concluímos.** Nenhum teste rejeita H₀ verdadeira mais do que deveria, mas o t de Welch se desvia de "
+        "5%: com dados tão assimétricos ele é **conservador**, e os outliers o afastam um pouco mais. Isso não é uma "
+        "vantagem, porque um teste que rejeita menos que α também tende a perder poder, como a seção 5 mostra."
+    )
     repeticoes = f"{REPETITIONS:_}".replace("_", ".")
     st.caption(
         f"Taxas do efeito 0 de `resultados/simulacao.csv` ({repeticoes} repetições, semente 42), geradas por "
@@ -413,8 +428,28 @@ def secao_erro_tipo_i():
 
 def secao_poder():
     st.header("5. Poder")
-    st.plotly_chart(grafico_g4(carregar_simulacao()))
-    em_construcao("Texto interpretativo do G4", "Issue #25")
+    linhas = carregar_simulacao()
+    st.plotly_chart(grafico_g4(linhas))
+    taxa = {(l["situacao"], l["teste"], l["efeito"]): l["taxa_rejeicao"] for l in linhas}
+    efeitos = sorted({l["efeito"] for l in linhas if l["efeito"] > 0})
+    vantagem = {s: [taxa[s, "Mann-Whitney", e] - taxa[s, "t de Welch", e] for e in efeitos] for s in NOMES_SITUACOES}
+    sempre_mw = all(v > 0 for vs in vantagem.values() for v in vs)
+
+    def pct(valor):
+        return f"{br(valor * 100, 1)}%"
+
+    st.markdown(
+        f"**O que o gráfico mostra.** O Mann-Whitney detecta o efeito com mais frequência "
+        f"{'em todos os efeitos e nas duas situações' if sempre_mw else 'na maior parte dos efeitos'}. Com 10 h, "
+        f"perto do efeito dos dados reais, ele rejeita em {pct(taxa['ideal', 'Mann-Whitney', 10])} das amostras no "
+        f"cenário ideal, contra {pct(taxa['ideal', 't de Welch', 10])} do t de Welch, e com outliers em "
+        f"{pct(taxa['violada', 'Mann-Whitney', 10])}, contra {pct(taxa['violada', 't de Welch', 10])}.\n\n"
+        f"**O que concluímos.** A vantagem **não muda de lado**: ela só cresce com os outliers, de até "
+        f"{br(max(vantagem['ideal']) * 100, 1)} p.p. no cenário ideal para até {br(max(vantagem['violada']) * 100, 1)} "
+        "p.p., porque "
+        "a média e o desvio-padrão do t de Welch são puxados pelos valores extremos, enquanto os postos do "
+        "Mann-Whitney mal mudam. Mesmo assim, com n = 30 nenhum dos dois chega a 80% de poder com o efeito de 10 h."
+    )
     st.caption(
         "Taxas de rejeição de `resultados/simulacao.csv`, uma curva por situação e teste, geradas por "
         "`scripts/poder.py` e `scripts/violacao.py`. O efeito é o aumento da mediana do grupo com bot, em "

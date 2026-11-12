@@ -505,8 +505,41 @@ def secao_dados_reais():
 
 
 def secao_conclusao():
+    taxa = {(l["situacao"], l["teste"], l["efeito"]): l["taxa_rejeicao"] for l in carregar_simulacao()}
+    testes = carregar_testes_reais()
+
+    def pct(valor):
+        return f"{br(valor * 100, 1)}%"
+
+    def perda(teste):
+        return br((taxa["ideal", teste, 10] - taxa["violada", teste, 10]) * 100, 1)
+
     st.header("7. Conclusão")
-    em_construcao("O que o grupo esperava × o que encontrou, e a recomendação", "Entrega Final")
+    st.markdown(
+        "**O que esperávamos.** Antes de simular, o grupo esperava que o t de Welch fosse o teste mais afetado pelos "
+        "outliers, perdendo poder e com o erro tipo I mais longe de 5%, e que o Mann-Whitney ficasse perto de 5%, "
+        "com pouca perda de poder.\n\n"
+        f"**O que encontramos.** A expectativa se confirmou. O erro tipo I do Mann-Whitney ficou em "
+        f"{pct(taxa['ideal', 'Mann-Whitney', 0])} e {pct(taxa['violada', 'Mann-Whitney', 0])}, e o do t de Welch em "
+        f"{pct(taxa['ideal', 't de Welch', 0])} e {pct(taxa['violada', 't de Welch', 0])}. No efeito de 10 h, os "
+        f"outliers tiraram {perda('t de Welch')} p.p. de poder do t de Welch e só {perda('Mann-Whitney')} p.p. do "
+        "Mann-Whitney. O que não esperávamos é que o t de Welch já fosse conservador **sem** outliers: a assimetria "
+        "da Weibull, com forma perto de 0,5, basta para que n = 30 não deixe a média com distribuição normal.\n\n"
+        "**Recomendação.** Para o tempo até o merge, use o **Mann-Whitney**: ele controla o erro tipo I no nível "
+        "escolhido e teve mais poder em todos os efeitos simulados. Nos dados reais, ele não rejeitou H₀ "
+        f"(p = {br(float(testes['Mann-Whitney']['p_valor']), 3)}), e o resultado significativo do t de Welch "
+        f"(p = {br(float(testes['t de Welch']['p_valor']), 3)}) vem dos poucos PRs muito lentos, que são justamente o "
+        "ponto fraco dele.\n\n"
+        "**Quando a escolha mudaria.** Se a pergunta for sobre a **média**, por exemplo o total de horas gastas "
+        "esperando o merge, só o t de Welch responde a ela. Com amostras grandes a diferença também some: com cerca "
+        "de 56 PRs por grupo os dois chegam a 80% de poder no cenário ideal "
+        f"([tamanho-da-amostra.md]({LINK_REPOSITORIO}/blob/main/docs/tamanho-da-amostra.md)). Nenhum teste é "
+        "sempre melhor: a vantagem do Mann-Whitney vem da assimetria e dos outliers destes dados.\n\n"
+        "**Principal limitação.** O desenho é **antes × depois** da adoção do bot, sem grupo de controle: outras "
+        "mudanças no langflow na mesma época podem explicar a diferença, então não dá para atribuí-la ao bot. Além "
+        f"disso, com n = 30 os testes têm no máximo {pct(taxa['ideal', 'Mann-Whitney', 10])} de poder para um efeito "
+        "do tamanho do observado, então um resultado não significativo não mostra que o efeito não existe."
+    )
 
 
 def main():

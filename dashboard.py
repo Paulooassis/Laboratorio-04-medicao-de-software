@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.join(RAIZ, "scripts"))
 
 import aplicar_testes  # noqa: E402
 import gerar_dados_simulados  # noqa: E402
+from scripts.poder import REPETITIONS  # noqa: E402
 
 DADOS_REAIS = os.path.join(RAIZ, "dados", "tempo-ate-merge-langflow.csv")
 DADOS_SIMULADOS = os.path.join(RAIZ, "dados", "tempo-ate-merge-simulado.csv")
@@ -214,6 +215,37 @@ def carregar_simulacao():
          "n": int(l["n"]), "taxa_rejeicao": float(l["taxa_rejeicao"])}
         for l in linhas
     ]
+
+
+def grafico_g3(linhas):
+    """G3: a taxa de erro tipo I dos dois testes em cada situação, com a referência em α.
+
+    Usa só o efeito 0 de resultados/simulacao.csv, em que os dois grupos vêm da mesma distribuição
+    e toda rejeição é um erro tipo I.
+    """
+    situacoes = [s for s in NOMES_SITUACOES if any(l["situacao"] == s for l in linhas)]
+    fig = go.Figure()
+    for teste, cor in CORES_TESTES.items():
+        taxas = {l["situacao"]: l["taxa_rejeicao"] for l in linhas if l["teste"] == teste and l["efeito"] == 0}
+        fig.add_trace(go.Bar(
+            x=[NOMES_SITUACOES[s] for s in situacoes], y=[taxas[s] for s in situacoes], name=teste,
+            marker_color=cor, text=[f"{taxas[s]:.1%}".replace(".", ",") for s in situacoes],
+            textposition="outside", hovertemplate=f"{teste}<br>%{{x}} | erro tipo I %{{y:.2%}}<extra></extra>",
+        ))
+    fig.add_hline(
+        y=ALFA, line={"color": "rgba(80, 80, 80, 0.8)", "width": 2, "dash": "dash"},
+        annotation={"text": f"α = {br(ALFA * 100, 0)}% (taxa esperada)",
+                    "font": {"size": 11, "color": "rgba(80, 80, 80, 1)"}},
+        annotation_position="top left",
+    )
+    fig.update_layout(
+        title="G3 — Erro tipo I dos dois testes: proporção de rejeições com H₀ verdadeira",
+        barmode="group", bargap=0.35, height=440, margin={"t": 90}, legend_title_text="Teste",
+    )
+    n = linhas[0]["n"]
+    fig.update_xaxes(title_text=f"Situação simulada (n = {n} por grupo, {REPETITIONS:_} repetições)".replace("_", "."))
+    fig.update_yaxes(title_text="Taxa de erro tipo I (proporção de p < α)", range=[0, 0.08], tickformat=".0%")
+    return fig
 
 
 def grafico_g4(linhas):

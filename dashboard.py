@@ -298,10 +298,6 @@ def grafico_g4(linhas):
     return fig
 
 
-def em_construcao(conteudo, onde):
-    st.info(f"{conteudo}: em construção ({onde}).", icon=":material/construction:")
-
-
 def cabecalho():
     st.title("Testes de hipótese por dentro")
     st.markdown("**t de Welch x Mann-Whitney** no tempo até o merge de Pull Requests, com e sem bot de revisão.")

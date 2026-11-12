@@ -1,0 +1,2 @@
+# O módulo csv grava CRLF; o Git guarda os CSV com LF, então rodar o main.py não deixa diferenças falsas.
+*.csv text eol=lf

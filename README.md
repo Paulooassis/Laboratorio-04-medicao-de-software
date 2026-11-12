@@ -36,12 +36,14 @@ streamlit run dashboard.py
 
 Abre o dashboard no navegador, em `http://localhost:8501`. Ele é feito em [Streamlit](https://streamlit.io/), segue as seções da entrega final (Cenário, Os dados, Como os testes funcionam, Erro tipo I, Poder, Dados reais e Conclusão) e mostra no topo os links do repositório e do [GitHub Projects](https://github.com/users/Paulooassis/projects/4).
 
-Dois gráficos já estão prontos, gerados a partir dos CSVs do repositório:
+Os quatro gráficos são gerados a partir dos CSVs do repositório, sem valores digitados à mão, e cada teste tem sempre a mesma cor:
 
 - **G1** (seção *Os dados*): o tempo até o merge dos PRs, com um histograma por grupo, nos dados reais ao lado dos simulados. O eixo é logarítmico porque os tempos vão de segundos a semanas.
 - **G2** (seção *Como os testes funcionam*): a distribuição que a estatística de cada teste segue quando H0 é verdadeira, com a região de rejeição (α = 0,05, bilateral) e a área do p-valor de um exemplo.
+- **G3** (seção *Erro tipo I*): a taxa de erro tipo I dos dois testes no cenário ideal e no cenário com outliers, com a linha de referência em 5% e a margem de erro da simulação (±0,4 p.p.). Lê o efeito 0 de `resultados/simulacao.csv`.
+- **G4** (seção *Poder*): a taxa de rejeição dos dois testes por tamanho do efeito, uma curva por teste em cada situação. Lê `resultados/simulacao.csv`.
 
-Os gráficos G3 (erro tipo I) e G4 (poder) entram na Lab04S02.
+O dashboard só lê os CSV já gravados no repositório, então abre na hora, sem precisar rodar o `main.py` antes.
 
 ### Outros scripts
 

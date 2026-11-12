@@ -217,20 +217,29 @@ def carregar_simulacao():
     ]
 
 
+def margem_simulacao(taxa, confianca=0.95):
+    """Meia largura do intervalo de confiança de uma taxa estimada em REPETITIONS repetições."""
+    return stats.norm.ppf(1 - (1 - confianca) / 2) * np.sqrt(taxa * (1 - taxa) / REPETITIONS)
+
+
 def grafico_g3(linhas):
     """G3: a taxa de erro tipo I dos dois testes em cada situação, com a referência em α.
 
     Usa só o efeito 0 de resultados/simulacao.csv, em que os dois grupos vêm da mesma distribuição
-    e toda rejeição é um erro tipo I.
+    e toda rejeição é um erro tipo I. A barra de erro é a margem de 95% da própria simulação,
+    ±1,96·√(p(1 − p)/repetições): cerca de ±0,4 p.p. perto de 5%.
     """
     situacoes = [s for s in NOMES_SITUACOES if any(l["situacao"] == s for l in linhas)]
     fig = go.Figure()
     for teste, cor in CORES_TESTES.items():
         taxas = {l["situacao"]: l["taxa_rejeicao"] for l in linhas if l["teste"] == teste and l["efeito"] == 0}
+        margens = [margem_simulacao(taxas[s]) for s in situacoes]
         fig.add_trace(go.Bar(
             x=[NOMES_SITUACOES[s] for s in situacoes], y=[taxas[s] for s in situacoes], name=teste,
             marker_color=cor, text=[f"{taxas[s]:.1%}".replace(".", ",") for s in situacoes],
-            textposition="outside", hovertemplate=f"{teste}<br>%{{x}} | erro tipo I %{{y:.2%}}<extra></extra>",
+            textposition="outside", customdata=margens,
+            error_y={"type": "data", "array": margens, "color": "rgba(40, 40, 40, 0.8)", "thickness": 1.5},
+            hovertemplate=f"{teste}<br>%{{x}} | erro tipo I %{{y:.2%}} ± %{{customdata:.2%}}<extra></extra>",
         ))
     fig.add_hline(
         y=ALFA, line={"color": "rgba(80, 80, 80, 0.8)", "width": 2, "dash": "dash"},
@@ -239,7 +248,9 @@ def grafico_g3(linhas):
         annotation_position="top left",
     )
     fig.update_layout(
-        title="G3 — Erro tipo I dos dois testes: proporção de rejeições com H₀ verdadeira",
+        title={"text": "G3 — Erro tipo I dos dois testes: proporção de rejeições com H₀ verdadeira",
+               "subtitle": {"text": "Barras de erro: margem de 95% da simulação, ±1,96·√(p(1 − p)/"
+                                    f"{REPETITIONS:_}) ≈ ±0,4 p.p.".replace("_", ".")}},
         barmode="group", bargap=0.35, height=440, margin={"t": 90}, legend_title_text="Teste",
     )
     n = linhas[0]["n"]
